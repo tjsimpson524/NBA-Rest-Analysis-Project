@@ -1,0 +1,441 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+This is an [R Markdown](http://rmarkdown.rstudio.com) Notebook. When you execute code within the notebook, the results appear beneath the code. 
+
+Try executing this chunk by clicking the *Run* button within the chunk or by placing your cursor inside it and pressing *Ctrl+Shift+Enter*. 
+
+```{r}
+library(tidyverse)
+library(lubridate)
+
+```
+
+```{r}
+#filtered to eliminate breaks between seasons. 
+start <- '7-30'
+end <- '11-11'
+
+team_analysis <- read_csv('data/nba_glog_14_23.csv') %>%
+  filter(Days >= 0) %>%
+  filter(Days <= 100) %>%
+  filter(Days != 0) %>%
+  mutate(Date = as.Date(Date), year= year(Date)) %>%
+  filter(!(Date >= ymd(paste(year, start, sep = '-')) &
+           Date <= ymd(paste(year,end, sep = '-'))))
+
+
+view(team_analysis)
+```
+
+
+
+```{r}
+team_analysis
+  
+```
+
+
+*******************Point value per day of Rest***********************
+
+
+```{r}
+
+team_analysis %>%
+  
+  ggplot(aes(x = Days)) +
+           geom_histogram()
+  
+  
+```
+```{r}
+# 1 day of rest = .5 pt
+
+n <- glm(Tm_PTS ~ I(Days - 1), data = team_analysis) 
+  summary(n)
+
+```
+```{r}
+# Point differential  (mimics above findings)
+
+
+n <- glm(Tm_PTS-Opp_PTS ~ I(Days - 1), data = team_analysis) 
+  summary(n)
+
+```
+```{r}
+#Point Differential w/ Away/Home factors
+
+n <- glm(Tm_PTS-Opp_PTS ~ I(Days - 1) + `A/H`, data = team_analysis) 
+  summary(n)
+
+```
+
+**********Effect of rest on Stats*******************************************
+
+
+```{r}
+
+
+n <- glm(`FG%` ~ I(Days - 1), data = team_analysis) 
+  summary(n)
+  
+  
+```
+```{r}
+
+
+n <- glm(`FG%` ~ I(Days - 1) + `A/H`, data = team_analysis) 
+  summary(n)
+  
+
+```
+
+
+
+```{r}
+
+n <- glm(`TP%` ~ I(Days - 1) + `A/H`, data = team_analysis) 
+  summary(n)
+
+
+```
+
+
+```{r}
+
+n <- glm(`FT%` ~ I(Days - 1) + `A/H`, data = team_analysis) 
+  summary(n)
+
+```
+
+
+
+```{r}
+
+n <- glm(TOV ~ I(Days - 1) + `A/H`, data = team_analysis) 
+  summary(n)
+
+```
+
+
+```{r}
+
+n <- glm(`ORB` ~ I(Days - 1) + `A/H`, data = team_analysis) 
+  summary(n)
+
+```
+
+```{r}
+
+n <- glm(`TRB` ~ I(Days - 1) + `A/H`, data = team_analysis) 
+  summary(n)
+
+```
+
+
+******************W% per day of rest*******************************
+
+
+```{r}
+
+team_analysis%>%
+  as.numeric(`W/L`)
+
+```
+
+```{r}
+
+n <- glm(`W/L`/18101 ~ I(Days - 1) + `A/H`, data = team_analysis) 
+  summary(n)
+
+```
+
+
+
+****************Rest effect by Season**********************************
+
+```{r}
+
+season_14_15 <- team_analysis%>%
+  filter(team_analysis$Date >= '2014-11-28' & team_analysis$Date <= '2015-06-16', na.rm = TRUE) 
+  
+```
+
+
+```{r}
+
+n <- glm(Tm_PTS ~ I(Days - 1) + `A/H`, data = season_14_15) 
+  summary(n)
+
+```
+
+
+```{r}
+
+n <- glm(Tm_PTS - Opp_PTS ~ I(Days - 1) + `A/H`, data = season_14_15) 
+  summary(n)
+
+  #week of rest = 
+```
+
+```{r}
+
+season_15_16 <- team_analysis%>%
+  filter(team_analysis$Date >= '2015-11-27' & team_analysis$Date <= '2016-06-19', na.rm = TRUE) %>%
+  view()
+
+
+
+```
+
+
+```{r}
+
+n <- glm(Tm_PTS - Opp_PTS ~ I(Days - 1) + `A/H`, data = season_15_16) 
+  summary(n)
+
+```
+
+
+```{r}
+
+season_16_17 <- team_analysis%>%
+  filter(team_analysis$Date >= '2016-11-25' & team_analysis$Date <= '2017-05-12', na.rm = TRUE) %>%
+  view()
+
+```
+
+
+```{r}
+
+n <- glm(Tm_PTS - Opp_PTS ~ I(Days - 1) + `A/H`, data = season_16_17) 
+  summary(n)
+
+```
+
+
+
+```{r}
+
+season_17_18 <- team_analysis%>%
+  filter(team_analysis$Date >= '2017-11-17' & team_analysis$Date <= '2018-06-18', na.rm = TRUE) %>%
+  view()
+
+```
+
+
+```{r}
+
+n <- glm(Tm_PTS - Opp_PTS ~ I(Days - 1) + `A/H`, data = season_17_18) 
+  summary(n)
+```
+
+```{r}
+season_18_19 <- team_analysis%>%
+  filter(team_analysis$Date >= '2018-11-16' & team_analysis$Date <= '2019-06-13', na.rm = TRUE) %>%
+  view()
+
+```
+
+```{r}
+n <- glm(Tm_PTS - Opp_PTS ~ I(Days - 1) + `A/H`, data = season_18_19) 
+  summary(n)
+```
+
+```{r}
+#season_18_19 <- team_analysis%>%
+ # filter(team_analysis$Date >= '2018-11-16' & team_analysis$Date <= '2019-06-13', na.rm = TRUE) %>%
+  #view()
+
+#covid
+
+```
+
+
+```{r}
+season_20_21 <- team_analysis%>%
+  filter(team_analysis$Date >= '2020-12-16' & team_analysis$Date <= '2021-07-21', na.rm = TRUE) %>%
+  view()
+```
+
+```{r}
+n <- glm(Tm_PTS - Opp_PTS ~ I(Days - 1) + `A/H`, data = season_20_21) 
+  summary(n)
+
+```
+```{r}
+
+season_21_22 <- team_analysis%>%
+  filter(team_analysis$Date >= '2021-11-19' & team_analysis$Date <= '2022-06-16', na.rm = TRUE) %>%
+  view()
+
+```
+
+
+```{r}
+
+n <- glm(Tm_PTS - Opp_PTS ~ I(Days - 1) + `A/H`, data = season_21_22) 
+  summary(n)
+
+```
+
+```{r}
+
+season_22_23 <- team_analysis%>%
+  filter(team_analysis$Date >= '2022-11-18' & team_analysis$Date <= '2023-01-30', na.rm = TRUE) %>%
+  view()
+
+```
+
+```{r}
+
+n <- glm(Tm_PTS - Opp_PTS ~ I(Days - 1) + `A/H`, data = season_22_23) 
+  summary(n)
+
+```
+
+
+```{r}
+
+input_y <- 'Tm_PTS'
+
+
+ team_analysis %>%
+  filter(Days <= 3) %>%
+  rename(Away_Home = 'A/H') %>%
+  ggplot(aes(x=Days, y= .data[[input_y]])) +
+  
+  geom_jitter(alpha =.15, width = 0.2) +
+  geom_smooth(method = 'lm', color = 'green') +
+   facet_grid(rows = 'Away_Home')
+
+```
+
+
+```{r}
+
+```
+
+
+
+```{r}
+
+#small/positive effect for rest
+
+input_y <- 'Tm_PTS'
+
+
+
+ team_analysis %>%
+  filter(Days <= 3) %>%
+  filter(Date >= '2014-11-28' & Date <= '2015-06-16') %>% 
+ 
+  rename( Away_Home = 'A/H') %>%
+  ggplot(aes(x=Days, y= .data[[input_y]])) +
+  
+
+  geom_jitter(alpha =.15, width = 0.2) +
+  geom_smooth(method = 'lm', color = 'green') +
+  facet_grid(rows = 'Away_Home')
+ 
+
+```
+```{r}
+
+input_y <- 'Tm_PTS'
+
+team_analysis %>%
+  filter(Days <= 3) %>%
+  rename(Away_Home = 'A/H') %>%
+  
+  ggplot(aes(x=.data[[input_y]])) +
+  geom_density() +
+ facet_grid(rows = 'Days') +
+  facet_grid(rows = vars(Days), cols = vars(Away_Home))
+
+```
+
+
+```{r}
+
+input_y <- 'Tm_PTS'
+
+team_analysis %>%
+  filter(Days <= 3) %>%
+  filter()
+  ggplot(aes(x=.data[[input_y]])) +
+  geom_density() +
+  facet_grid(rows = 'Days')
+
+```
+
+
+
+```{r}
+# New table for mean in h/a splits#
+ 
+input_y <- 'FT%'
+
+team_analysis %>%
+  filter(Days <= 3) %>%
+  group_by(Days) %>%
+  summarise(mean = mean(.data[[input_y]], na.rm=T)) 
+
+```
+```{r}
+ 
+input_y <- 'Tm_PTS'
+
+team_analysis %>%
+rename(Away_Home = 'A/H') %>%
+group_by(Days, Away_Home) %>%
+filter(Days <=3) %>%
+summarise(mean = mean(.data[[input_y]], na.rm=T)) %>%
+  pivot_wider(names_from = Away_Home, values_from = mean) %>%
+rename(Away = 'A') %>%
+  rename(Home = 'H')
+
+```
+
+```{r}
+
+team_rest_diff <- team_analysis %>%
+  filter(`A/H` ==  'H')%>%
+  select(Tm, Opp, `W/L`, Tm_PTS, Opp_PTS, Days, Date)%>%
+  inner_join(team_analysis %>%
+               select(Opp=Tm, Date, Opp_Days = Days)
+    
+)
+
+```
+```{r}
+
+team_rest_diff %>%
+  mutate(PT_Diff = Tm_PTS-Opp_PTS) %>%
+  group_by(Days, Opp_Days) %>%
+  summarize(mean = mean(PT_Diff)) %>%
+  filter(Days <= 3) %>%
+  filter(Opp_Days <= 3 ) %>%
+  pivot_wider(names_from = Opp_Days, values_from = mean)
+
+
+```
+
+```{r}
+
+#Home win% compared to Opp rest#
+
+team_rest_diff %>%
+  mutate(Home_Tm_W = as.numeric(Tm_PTS-Opp_PTS >0)) %>%
+  group_by(Days, Opp_Days) %>%
+  summarize(mean = mean(Home_Tm_W)) %>%
+  filter(Days <= 3) %>%
+  filter(Opp_Days <= 3 ) %>%
+  pivot_wider(names_from = Opp_Days, values_from = mean)
+
+
+```
+
