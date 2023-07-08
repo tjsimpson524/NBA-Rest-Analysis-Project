@@ -9,12 +9,178 @@ Try executing this chunk by clicking the *Run* button within the chunk or by pla
 
 ```{r}
 library(tidyverse)
-library(lubridate)
+#library(lubridate)
+library(gganimate)
+library(stringr)
+```
+
+```{r}
+NBA <- read.csv(file = 'nba_glog_14_23.csv')
+
+NBA
+```
+```{r}
+
+NBA_plyr <- read.csv(file = 'nba_pglogs_14_23.csv')
+
 
 ```
 
 ```{r}
+NBA <- read.csv(file = 'nba_pglogs_14_23/nba_glog_14_23.csv') %>%
+  mutate(PT_Diff = Tm_PTS-Opp_PTS) %>%
+  mutate(PT_Total = Tm_PTS + Opp_PTS) %>%
+  filter(`A.H` == 'H') %>%
+  filter(Days == 2) %>%
+  filter(`W.L` == 'W') 
+#filter(PT_Diff >= 7)
+  #summarise(win_loss = sum(PT_Diff >= 7)) 
+  
+
+
+NBA
+
+```
+
+
+```{r}
+
+start <- '7-30'
+end <- '11-11'
+
+player <- read.csv(file = 'east_player_glog_22_23/bos_glog_23.csv') %>%
+  filter(Days >= 0) %>%
+  filter(Days <= 100) %>%
+  filter(Days != 0) %>%
+  mutate(Date = as.Date(Date), year= year(Date)) %>%
+  filter(!(Date >= ymd(paste(year, start, sep = '-')) &
+           Date <= ymd(paste(year,end, sep = '-'))))
+```
+
+
+
+```{r}
+#takes out Inactives from rows#
+
+NBA <- NBA[apply(player, 1, function(x) !any(x == 'Inactive')), ] %>%
+  mutate(Player_PTS = as.numeric(PTS), na.rm = TRUE) %>%
+  rename(Away_Home = `A.H`) %>%
+  drop_na() 
+
+
+
+NBA
+```
+
+
+```{r}
+player_1 <- 'Player_PTS'
+
+player_1 %>%
+group_by(Days, `Away_Home`) %>%
+filter(Days <= 4) %>%
+filter(player == c('tatumja01', 'brownja02', 'horfoal01', 'whitede01', 'williro04'))
+summarise(mean = mean(.data[[input_y]], na.rm=T)) %>%
+pivot_wider(names_from = Away_Home, values_from = mean) %>%
+rename(Away = 'A') %>%
+rename(Home = 'H')
+}
+
+
+```
+
+
+
+```{r}
+
+
+league <- glm(Tm_PTS + Opp_PTS ~ I(Days - 1), data = league_rest_diff) 
+  summary(league)
+```
+
+```{r}
+
+
+league_rest_diff <- NBA %>%
+  filter(`A.H` == 'H')%>%
+  filter(Date)%>%
+  select(Tm, Opp, `W.L`, Tm_PTS, Opp_PTS, Days, Date)%>%
+  inner_join(NBA %>%
+  select(Opp=Tm, Date, Opp_Days = Days))
+
+```
+
+
+
+```{r}
+
+league_rest_diff %>%
+  mutate(Home_Tm_PTS = as.numeric(Tm_PTS+Opp_PTS)) %>%
+  group_by(Days, Opp_Days) %>%
+  summarize(mean = mean(Home_Tm_PTS)) %>%
+  filter(Days <= 5) %>%
+  filter(Opp_Days <= 5 ) %>%
+  pivot_wider(names_from = Opp_Days, values_from = mean)
+
+
+```
+
+
+```{r}
+
+league_rest_diff %>%
+  mutate(Home_Tm_PTS = as.numeric(Tm_PTS+Opp_PTS)) %>%
+  group_by(Days, Opp_Days) %>%
+  summarize(mean = mean(Home_Tm_PTS)) %>%
+  filter(Days <= 5) %>%
+  filter(Opp_Days <= 5 ) %>%
+  pivot_wider(names_from = Opp_Days, values_from = mean)
+
+```
+
+
+
+```{r}
+
+player_1 <- bos %>%
+  rename(away_home = `A.H`) %>%
+  rename(plus_minus = `X...`) %>%
+  select(player, PTS, Days, Date, away_home, plus_minus) %>%
+  filter(player == c('tatumja01')) %>%
+  filter(away_home == 'A') %>%
+  mutate(Date = as.Date(Date), year= year(Date)) %>%
+  mutate_at(c('PTS', 'away_home', 'plus_minus'), as.numeric, na.rm = TRUE) 
+
+```
+
+
+
+```{r}
+
+player_1
+
+```
+
+
+```{r}
+
+p <- glm(PTS ~ I(Days - 1), data = player_1) 
+  summary(p)
+ 
+```
+
+
+
+
+
+
+
+
+
+
+```{r}
 #filtered to eliminate breaks between seasons. 
+
 start <- '7-30'
 end <- '11-11'
 
@@ -26,30 +192,21 @@ team_analysis <- read_csv('data/nba_glog_14_23.csv') %>%
   filter(!(Date >= ymd(paste(year, start, sep = '-')) &
            Date <= ymd(paste(year,end, sep = '-'))))
 
-
-view(team_analysis)
-```
-
-
-
-```{r}
 team_analysis
-  
+
 ```
+
+
+
 
 
 *******************Point value per day of Rest***********************
 
 
-```{r}
 
-team_analysis %>%
-  
-  ggplot(aes(x = Days)) +
-           geom_histogram()
-  
-  
-```
+
+
+
 ```{r}
 # 1 day of rest = .5 pt
 
@@ -57,6 +214,10 @@ n <- glm(Tm_PTS ~ I(Days - 1), data = team_analysis)
   summary(n)
 
 ```
+
+
+
+
 ```{r}
 # Point differential  (mimics above findings)
 
@@ -65,6 +226,10 @@ n <- glm(Tm_PTS-Opp_PTS ~ I(Days - 1), data = team_analysis)
   summary(n)
 
 ```
+
+
+
+
 ```{r}
 #Point Differential w/ Away/Home factors
 
@@ -84,6 +249,9 @@ n <- glm(`FG%` ~ I(Days - 1), data = team_analysis)
   
   
 ```
+
+
+
 ```{r}
 
 
@@ -139,19 +307,6 @@ n <- glm(`TRB` ~ I(Days - 1) + `A/H`, data = team_analysis)
 ******************W% per day of rest*******************************
 
 
-```{r}
-
-team_analysis%>%
-  as.numeric(`W/L`)
-
-```
-
-```{r}
-
-n <- glm(`W/L`/18101 ~ I(Days - 1) + `A/H`, data = team_analysis) 
-  summary(n)
-
-```
 
 
 
@@ -266,6 +421,9 @@ n <- glm(Tm_PTS - Opp_PTS ~ I(Days - 1) + `A/H`, data = season_20_21)
   summary(n)
 
 ```
+
+
+
 ```{r}
 
 season_21_22 <- team_analysis%>%
@@ -282,6 +440,8 @@ n <- glm(Tm_PTS - Opp_PTS ~ I(Days - 1) + `A/H`, data = season_21_22)
 
 ```
 
+
+
 ```{r}
 
 season_22_23 <- team_analysis%>%
@@ -290,12 +450,25 @@ season_22_23 <- team_analysis%>%
 
 ```
 
+
+
 ```{r}
 
 n <- glm(Tm_PTS - Opp_PTS ~ I(Days - 1) + `A/H`, data = season_22_23) 
   summary(n)
 
 ```
+
+
+
+```{r}
+
+n <- glm(Tm_PTS + Opp_PTS ~ I(Days - 1) + `A/H`, data = season_22_23) 
+  summary(n)
+
+```
+
+
 
 
 ```{r}
@@ -315,9 +488,6 @@ input_y <- 'Tm_PTS'
 ```
 
 
-```{r}
-
-```
 
 
 
@@ -343,6 +513,9 @@ input_y <- 'Tm_PTS'
  
 
 ```
+
+
+
 ```{r}
 
 input_y <- 'Tm_PTS'
@@ -385,6 +558,9 @@ team_analysis %>%
   summarise(mean = mean(.data[[input_y]], na.rm=T)) 
 
 ```
+
+
+
 ```{r}
  
 input_y <- 'Tm_PTS'
@@ -392,7 +568,7 @@ input_y <- 'Tm_PTS'
 team_analysis %>%
 rename(Away_Home = 'A/H') %>%
 group_by(Days, Away_Home) %>%
-filter(Days <=3) %>%
+filter(Days <=5) %>%
 summarise(mean = mean(.data[[input_y]], na.rm=T)) %>%
   pivot_wider(names_from = Away_Home, values_from = mean) %>%
 rename(Away = 'A') %>%
@@ -400,42 +576,903 @@ rename(Away = 'A') %>%
 
 ```
 
+
+```{r}
+
+n <- glm(Tm_PTS~ I(Days - 1), data = team) 
+  summary(n)
+
+```
+
+
+
+
+
+
+
+
+
+
+
 ```{r}
 
 team_rest_diff <- team_analysis %>%
   filter(`A/H` ==  'H')%>%
   select(Tm, Opp, `W/L`, Tm_PTS, Opp_PTS, Days, Date)%>%
   inner_join(team_analysis %>%
-               select(Opp=Tm, Date, Opp_Days = Days)
-    
-)
+               select(Opp=Tm, Date, Opp_Days = Days))
+
+team_rest_diff
 
 ```
+
+
+
+
 ```{r}
 
-team_rest_diff %>%
+rest_diff <- team_rest_diff %>%
   mutate(PT_Diff = Tm_PTS-Opp_PTS) %>%
   group_by(Days, Opp_Days) %>%
   summarize(mean = mean(PT_Diff)) %>%
-  filter(Days <= 3) %>%
-  filter(Opp_Days <= 3 ) %>%
+  filter(Days <= 5) %>%
+  filter(Opp_Days <= 5 ) %>%
   pivot_wider(names_from = Opp_Days, values_from = mean)
 
 
 ```
 
 ```{r}
-
 #Home win% compared to Opp rest#
 
 team_rest_diff %>%
   mutate(Home_Tm_W = as.numeric(Tm_PTS-Opp_PTS >0)) %>%
   group_by(Days, Opp_Days) %>%
   summarize(mean = mean(Home_Tm_W)) %>%
-  filter(Days <= 3) %>%
-  filter(Opp_Days <= 3 ) %>%
+  filter(Days <= 5) %>%
   pivot_wider(names_from = Opp_Days, values_from = mean)
 
+
+```
+```{r}
+nyk <- c('randlju01','barrerj01','brunsja01', 'grimequ01' ,'simsje01'),c('randlju01','barrerj01','grimequ01','robinmi01','quickim01'))
+orl <- c('banchpa01','wagnefr01','cartewe01',	'fultzma01', 'harriga01','anthoco01','wagnemo01', 'houstca01','bolbo01')
+phi <- c('hardeja01',  'embiijo01','harrito02','maxeyty01','tuckepj01','miltosh01', 'harremo01','thybuma01','reedpa01','maxeyty01','meltode01')
+bos <- c('tatumja01','brownja02','horfoal01','smartma01','williro04')),  c('brownja02','tatumja01','horfoal01','smartma01','muscami01'))
+den <- c('jokicni01','caldwke01', 'gordoaa01', 'portemi01', 'murraja01'),'brownbr01','hylanbo01', 'greenje02', 'cancavl01','smithis01', 'reedda01', 'watsope01')
+ind <- c('halibty01','hieldbu01',	'nembhan01','turnemy01', 'nesmiaa01')
+was <-  c('morrimo01',	'bealbr01',	'avdijde01','	porzikr01','	gaffoda01'), c('morrimo01','bealbr01','wrighde01','porzikr01','gaffoda01'))
+mem <-  c('moranja01',	'banede01','brookdi01','jacksja02','tillmxa01')
+chi <- c('derozde01','	dosunay01', '	willipa01', 'lavinza01','	vucevni01'),c('derozde01','dosunay01','lavinza01','vucevni01','beverpa01'))
+nop <- c('mccolcj01', 'ingrabr01', 'murphtr02', 'joneshe01','valanjo01')
+okc <- c('willija06', 'wiggiaa01','	giddejo01','gilgesh01', 'willike04'  )
+tor <-   c('vanvlfr01','poeltja01','siakapa01','	barnesc01','anunoog01'))
+cho <- c('ballla01','roziete01','	haywago01', 'washipj01', 'willima07'),c('oubreke01','roziete01','	haywago01', 'washipj01', 'willima07'))
+sas <- c('johnske04','sochaje01','branhma01','bateske01','	colliza01')
+mia <-  c('adebaba01', '	butleji01', 'martica02', '	strusma01', '	vincega01'),c('adebaba01','butleji01','loveke01','herroty01','vincega01'))
+brk <- c('dinwisp01','	finnedo01','	bridgmi01', '	claxtni01','	johnsca02')
+hou <- c('greenja05','	sengual01','martike04','smithja05',	'tateja01')
+uta <- c('markkla01','clarkjo01','olynyke01', 'sextoco01','kesslwa01')
+mil <- c('antetgi01','holidjr01','lopezbr01','allengr01','middlkh01')), c('antetgi01','holidjr01','lopezbr01','allengr01','connapa01'))
+min <- c('edwaran01','	conlemi01','mcdanja02','	goberru01','	anderky01'))
+cle <-c('mitchdo01','	garlada01','mobleev01','allenja01','okorois01'))
+lac <- c('georgpa01','	leonaka01','	morrima03',	'plumlma01', 'jacksre01'))
+sac <- c('sabondo01','foxde01',	'barneha02','huertke01', 'murrake02')
+pho <- c( c('bookede01','paulch01','aytonde01','craigto01', 'okogijo01'))
+det <- c('bogdabo02', '	iveyja01','	hayeski01','	stewais01','baglema01')),  c('iveyja01','hayeski01','wisemja01','liveris01','bogdabo02'))
+atl <- c('murrade01','youngtr01','huntede01','collijo01', 'capelca01'))
+dal <- c('irvinky01', 'doncilu01','bullore01','greenjo02','poweldw01'))
+cle <-  c('mitchdo01','garlada01','mobleev01','allenja01','okorois01'))
+pho <- c('duranke01','bookede01','paulch01','aytonde01','okogijo01'))
+por <-
+lal <- c()
+```
+```{r}
+
+player_a <- read.csv(file = 'pid_glog_23/chi_glog_23.csv')%>%
+mutate(efg = (FG + 0.5 * Three_PT) / FGA) %>%
+mutate(tov = as.numeric(TOV), na.rm = TRUE) %>%
+filter(`away_home` %in% 'A') 
+#filter(Days == 2)
+
+
+
+player_a
+
+```
+
+ 
+ 
+```{r}
+
+  #mutate(Player_PTS = as.numeric(PTS), na.rm = TRUE) %>%
+  #mutate(player_pm = as.numeric(plus_minus), na.rm = TRUE) %>%
+  #mutate(fgm = as.numeric(FG), na.rm = TRUE)%>%
+  #mutate(fga = as.numeric(FGA), na.rm = TRUE)%>%
+  #mutate(fga = as.numeric(FGA), na.rm = TRUE)%>%
+  #mutate(three_m = as.numeric(X3P), na.rm = TRUE) %>%
+  #mutate(rebounds = as.numeric(TRB),na.rm = TRUE)%>%
+  #mutate(assists = as.numeric(AST), na.rm = TRUE)%>%
+  #mutate(tov = as.numeric(TOV), na.rm = TRUE) %>%
+  #mutate(efg = (fgm + 0.5 * three_m) / fga)%>%
+  #filter(`away_home` %in% 'A') 
+  #filter(`GS` > 0) %>%
+  #filter(Days == 2)
+  
+```
+
+
+
+```{r}
+player_a <- player_a[apply(player_a, 1, function(x) !any(x == 'Inactive')), ]
+
+player_a
+
+
+```
+
+
+
+```{r}
+player_a <- player_a%>%
+  select(player, Days, `Opp`,tov, efg, Win_Loss) %>%
+  filter(player %in%  c('derozde01','carusal01','lavinza01','vucevni01','beverpa01')) 
+
+player_a 
+
+```
+
+
+
+```{r}
+player_a <-player_a %>%
+ mutate(wl = as.numeric(gsub("[^[:digit:].-]+", "", player_a$Win_Loss)))
+```
+
+
+
+```{r}
+player_a[is.na(player_a)] <- 0
+```
+
+
+
+```{r}
+player_a$Win <- as.numeric(gsub(".*\\+([0-9]+).*", "\\1", player_a$Win_Loss))
+player_a$Loss <- as.numeric(gsub(".*-([0-9]+).*", "-\\1", player_a$Win_Loss))
+
+
+
+```
+
+
+```{r}
+player_a[is.na(player_a)] <- 0
+
+```
+
+
+```{r}
+
+player_a
+```
+
+
+```{r}
+
+a <- glm(wl ~ I(Days - 1) + `Opp` ,data = player_a) 
+  summary(a)
+
+```
+
+
+
+```{r}
+
+0.5506123 + 0.0007436 * 1
+   
+```
+
+
+
+```{r}
+
+a$wl <- a$fitted.values
+
+a
+```
+
+
+
+```{r}
+
+plot(x= wl,
+     y = a$fitted.values)
+
+abline(b = 1, a = 0)
+```
+
+
+
+
+```{r}
+confint(a, level= .95)
+
+```
+
+
+
+```{r}
+
+new <- data.frame(Days = 1:7)
+
+```
+
+
+```{r}
+
+pred <- predict(a, new, interval = 'prediction')
+
+```
+
+
+```{r}
+
+pred
+
+```
+
+
+```{r}
+
+ggplot(player_a, aes(x= wl)) +
+  geom_histogram(position = 'identity', bins = 66, color = 'white') +
+  scale_x_continuous(breaks = seq(-40,40,5)) +
+  scale_y_continuous(breaks = seq(0,20,1))
+
+```
+
+
+
+
+```{r}
+
+aov(a)
+
+```
+
+
+```{r}
+player_a$min <- as.numeric(sapply(strsplit(player_a$MP, ':'), '[',1))
+ player_a$sec <- as.numeric(sapply(strsplit(player_a$MP, ':'), '[', 2))
+ total_minutes <- sum(player_a$min) + sum(player_a$sec) /60
+
+player_a
+                      
+```
+
+
+
+
+```{r}
+player_h <- read.csv(file = 'pid_glog_23/mia_glog_23.csv')%>%
+mutate(efg = (FG + 0.5 * Three_PT) / FGA) %>%
+mutate(tov = as.numeric(TOV), na.rm = TRUE) 
+#filter(`away_home` %in% 'H') 
+#filter(Days == 2)
+
+
+
+player_h
+```
+
+
+
+
+
+
+```{r}
+player_h <- player_h[apply(player_h, 1, function(x) !any(x == 'Inactive')), ] 
+
+```
+
+
+
+```{r}
+player_h <- player_h %>%
+ mutate(wl = as.numeric(gsub("[^[:digit:].-]+", "", player_h$Win_Loss)))
+```
+
+
+
+
+```{r}
+player_h
+
+```
+
+
+```{r}
+player_h <- player_h %>%
+  select(player, Days, `Opp`, tov, efg, Win_Loss) %>%
+  filter(player == c('adebaba01','butleji01','strusma01','vincega01',	'herroty01'))
+
+player_h
+```
+
+
+
+```{r}
+player_h <-player_h %>%
+ mutate(wl = as.numeric(gsub("[^[:digit:].-]+", "", player_h$Win_Loss)))
+```
+
+
+
+```{r}
+
+player_h[is.na(player_h)] <- 0
+
+```
+
+
+
+```{r}
+player_h$Win <- as.numeric(gsub(".*\\+([0-9]+).*", "\\1", player_h$Win_Loss))
+player_h$Loss <- as.numeric(gsub(".*-([0-9]+).*", "-\\1", player_h$Win_Loss))
+```
+
+
+```{r}
+player_h[is.na(player_h)] <- 0
+
+```
+
+
+
+```{r}
+player_h
+
+```
+
+
+```{r}
+h <- glm(wl ~ I(Days - 1) ,data = player_h) 
+  
+summary(h)
+```
+
+
+```{r}
+
+.52391 + -.01905 * 2
+
+```
+
+
+```{r}
+
+new_h <- data.frame(Days = 1:15)
+
+```
+
+
+```{r}
+
+confint(h, level = .95)
+
+
+```
+
+
+```{r}
+
+pred_h <- predict(h, new_h, interval = 'prediction')
+
+```
+
+
+
+```{r}
+
+pred_h
+
+
+```
+
+
+```{r}
+ggplot(player_h, aes(x= wl)) +
+  geom_histogram(position = 'identity', bins = 66)+
+    scale_x_continuous(breaks = seq(-40,40,5))
+
+```
+
+
+```{r}
+
+aov(h)
+
+```
+
+
+```{r}
+-7.994 + 2.833
+
+```
+
+
+
+```{r}
+
+if(length(h$df.residual) == 0) {
+  stop("Model fitting failed. Check for error messages.")
+}
+
+```
+
+```{r}
+
+ph_residual <- h$player_h.residual
+
+```
+
+
+```{r}
+
+confint(h, level = .95)
+
+
+```
+```{r}
+
+ph_residual
+```
+
+
+```{r}
+
+new_data <- data.frame(Days = c(1,2,3))
+pred <- predict(h, new_data, se.fit = TRUE)
+
+```
+
+
+```{r}
+
+lower <- pred$fit - qt(0.975, ph_residual) * pred$se.fit
+upper <- pred$fit + qt(0.975, ph_residual) * pred$se.fit
+results <- data.frame(newdata,lower,pred$fit,upper)
+
+```
+
+```{r}
+pred
+
+
+```
+
+
+```{r}
+
+lower <- pred$fit - qt(0.975, h$player_h.residual) * pred$se.fit
+upper <- pred$fit + qt(0.975, h$player_h.residual) * pred$se.fit
+
+```
+
+```{r}
+
+1.908 + 6.584 
+
+```
+
+```{r}
+
+16.9 + 7.6 *2
+
+
+
+```
+
+
+
+```{r}
+rest_diff
+
+```
+
+
+```{r}
+h <- glm(wl ~ I(Days - 1) + rest_diff, data = player_h) 
+  summary(h)
+
+```
+
+
+```{r}
+player_h%>%
+  select(Win, player, `Opp`) %>%
+  filter(Win > 0)
+
+```
+
+
+```{r}
+
+
+
+```
+
+
+If Team A, when they win, win by 2 or more point .28 of the time. Team B, when they lose, lose by 2 or more .55 of the time. In an upcoming game,  Team A has a .54 chance of beating Team B by 1 or more points according to the sports-books. What is the probability Team A wins the game and beats Team B by more than 2 points? 
+
+A = .54
+B = .28
+C = .55
+
+(B*A)*A = P(B)=  (.28 * .54) + (0 * .46) = .1512
+
+P(B|A) = (.28(EB) * .1512(PB)) / .54(EA) = .28
+
+1/(decimal odds + 1)  1/(impled decimal price + 1) - for spread .5 and ml implied of .54 (1/2.00 +1) = .33 and (1/1.85 + 1) = .35
+
+
+c = 1/(1.909 +1) = .34
+ml = 1/(1.775 +1)=.36
+.34 * .36 = .1224
+
+fd =
+1/(1.909 +1) = .34
+ml = 1/(1.769 + 1)=.36
+.34 * .36 = .12
+
+
+Team A has a .59 chance of beating Team B. Team A wins by 3 or more points .48% of the time. Team B loses by 3 or more .12% of the time. What is the probability Team A will beat Team B by 3 or more points?
+
+
+Let's define the following events:
+
+    Event A: Team A wins the game
+    Event B: Team A wins by 3 or more points
+    Event C: Team B loses by 3 or more points
+
+We want to find the probability of Event B given that Event A occurs, which we can write as:
+
+P(B | A) = P(A | B) * P(B) / P(A)
+
+Using Bayes' theorem, we can rearrange this formula to solve for P(B | A):
+
+P(B | A) = P(A | B) * P(B) / P(A)
+
+We know that:
+
+    P(A) = 0.59 (the probability that Team A wins the game)
+    P(B | A) = 0.48% = 0.48 (the probability that Team A wins by 3 or more points given that they win the game)
+    P(C) = 0.12% = .12 (the probability that Team B loses by 3 or more points)
+
+To solve for P(B), we need to use the law of total probability. We know that:
+
+    Event B and Event C are mutually exclusive (a game can't be won by both teams by 3 or more points)
+    Event B and Event A are not necessarily mutually exclusive (Team A can win by 3 or more points, or they can win by less than 3 points)
+
+Using the law of total probability, we can find P(B) by considering all possible ways in which Team A can win the game, either by winning by 3 or more points or by winning by less than 3 points:
+
+P(B) = P(B | A) * P(A) + P(B | ¬A) * P(¬A)
+
+where ¬A represents the complement of Event A, which is the event that Team A loses the game.
+
+We don't know the probability of P(B | ¬A), but we know that if Team A loses the game, then they can't win by 3 or more points. So we can assume that P(B | ¬A) = 0.
+
+Simplifying the equation gives:
+
+P(B) = P(B | A) * P(A)
+
+Substituting the values we know:
+
+
+P(B) = P(B | A) * P(A) + P(B | ¬A) * P(¬A)
+= 0.48 * 0.59 + 0 * 0.41
+= 0.2832
+
+So the probability that Team A wins by 3 or more points is 0.2832.
+
+And using Bayes' formula, we can calculate the probability that Team A beats Team B by 3 or more points given that they win the game:
+
+P(B | A) = P(A | B) * P(B) / P(A)
+= 0.48 * 0.2832 / 0.59
+= 0.2308
+
+Therefore, the probability that Team A beats Team B by 3 or more points given that they win the game is approximately 0.2308 or 23.08%. I apologize again for any confusion caused by my previous response.
+
+1/(decimal odds + 1)
+
+
+1/(1.671 + 1) .37
+1/(1.909 + 1) .34  * line at 3
+.37*.34 = .13
+
+1/(1.685 + 1) .37 
+1/(1.926 + 1) .34 * line at 3
+.35 * .38 = .13
+
+
+```{r}
+b = .5605 * .58/(.5605 *.58 + .4395 * .42)
+e=  16.49 * (.6367997-.5824) + 18.77 * (50.86 -.5)
+
+
+b
+e
+```
+
+
+
+```{r}
+
+input_y <- 'Three_pct'
+
+player_h %>%
+  filter(Days <= 2) %>%
+  group_by(Days) %>%
+  summarise(mean = mean(.data[[input_y]], na.rm=T)) 
+
+```
+
+
+
+
+
+
+```{r}
+
+
+
+P(A|B) = .5333% * .56% / ( .5333% * .56% + .4467% * .56% ) = .5496% - w/c                      
+
+
+P(A) = .5333% * .56% / ( .5333% * .56% + .1334% * .44% ) = .8020% - w
+
+P(A|B) = .65 * .56% / ( .65 * .56% + .35 * .44% ) = .7079% - updated w/c with win% same
+
+P(A|B) = .65 * .70 / ( .65 * .70 + .35 * .30 ) = .7887% - updated w/c with win% updated
+
+
+```
+
+
+```{r}
+
+w = .62 * .6 / (.67 * .6 + .28 * .4)
+
+#P(A|B) w%  hist%     ditto     dogw%   hist-1
+w =   .5055 * .56 / (.5 * .56  + .57 * .44)  
+
+ev = 9.09 * .50
+
+wc
+```
+
+
+
+```
+
+
+
+```{r}
+
+EV = (Payout for Team B winning) * (Probability of Team B winning)
+
+EV = (Payout for Team B winning by 1 or more points) * (82% - 68%) + (Payout for Team B winning by 6 or more points) * (59% - 52%)
+
+EV = (Probability of winning * Payout on winning) + (Probability of losing * Cost of bet)
+
+favWev = (.74 * (100 / .59)) + (.26 * -100) = 130.50
+favCev = (.5 * (100 / .5)) + (.5 * -100) = 122
+
+dogWev = (.41 * (100 / 1.72)) + (.59 * -100) = -69.86
+dogcev = (.39 * (100 / 2)) + (.61 * -100) = -61
+
+
+For example, if the moneyline price for Team A winning by 1 or more points is -110 (meaning you have to bet $110 to win $100), the expected value of betting on Team B would be $22 ($110 * (82% - 68%)). If the spread price for Team A winning by 6 or more points is -120 (meaning you have to bet $120 to win $100), the expected value of betting on Team B would be $12 ($120 * (59% - 52%)). The total expected value would be the sum of these two amounts.
+
+favVev
+
+```
+
+
+```{r}
+Sure! Let's use the probabilities given in the question to calculate the probability of Team A winning and also winning by more than 5 points.
+
+First, let's calculate P(B|A), which is the probability of winning by more than 5 points given that Team A has won the game:
+
+P(B|A) = 57%
+
+Next, let's calculate P(A), which is the prior probability of Team A winning the game:
+
+P(A) = 72% * 60% / (72% * 60% + 40% * 60%) = 72% * 60% / (43.2%) = 0.632
+
+And finally, let's calculate P(B), which is the overall probability of winning by more than 5 points:
+
+P(B) = P(A and B) + P(not A and B) = P(A) * P(B|A) + (1 - P(A)) * P(B|not A)
+
+Let's assume that P(B|not A), the probability of winning by more than 5 points given that Team A has lost the game, is 0%. Then, we have:
+
+P(B) = 0.632 * 0.57 + (1 - 0.632) * 0 = 0.361744 + 0.3680 = 0.729744
+
+Finally, using Bayes' Theorem, we can calculate the probability of Team A winning and also winning by more than 5 points:
+
+P(A|B) = P(B|A) * P(A) / P(B) = 0.57 * 0.632 / 0.729744 = 0.499328
+
+So, based on these probabilities, the probability of Team A winning and also winning by more than 5 points is approximately 49.93%.
+```
+
+```{r}
+
+P(A) = 0.56 (the prior probability that Team A wins the game) # historic prob
+P(B | A) = 0.5 (the probability that Team A wins the game given that they win by more than 5 points)
+P(B) = P(B | A) * P(A) + (1 - 0.43) * (1 - P(A)) (the prior probability of the event that Team A beats Team B by more than 5 points)
+
+Plugging in the values, we get:
+
+P(A | B) = 0.66 * 0.56 / (0.66 * 0.56 + (1 - 0.86) * (1 - 0.56)) = 0.622
+ priorteama win% * priorh/ahistoricw% / ditto + priorteam a not cv% * team a not h/awin % = team A win/cv
+
+So the final answer is:
+
+The probability that Team A beats Team B by more than 5 points is 0.622, or 62.2%.
+
+
+
+```
+
+
+
+```{r}
+bayes = 0.7941 * 0.56 / (0.7941 * 0.56 + (1 - 0.79541) * (1 - 0.56)) 
+
+bayes
+```
+
+
+```{r}
+
+ev =18.62 * (.564147 -.5154) + 19.09 * (.4846 - .5)
+ev
+```
+
+
+```{r}
+ggplot(player_h, aes(x=Player_PTS)) +
+  geom_histogram(bins = 10)
+```
+
+
+
+
+
+```{r}
+
+h <- glm(Player_PTS~ I(Days - 1), data = player_h) 
+  summary(h)
+
+```
+
+```{r}
+h_st = (23.105 + -1.917) + (18.022 + 2.138) + (16.6576 + -1.5296) + (10.1054 +.8832) + (6.147 + 1.912)
+        
+h_rost = (31.6190 + .4048) +(27.99555 + -.06395 * 4) + (10.03467 + .03672) + (2 + 5)+  (11.07606 + .07940)  
+ 
+h_ben =(9.326899 + .005089) +(13.97378 + -.01963) + + (5.73736 + .05087) + (3.54369 + .02196) + (3.68182 + -.04545) + (2.3571 + .7143 * 4)
+
+pm = (-2.3962 + .2939) + (-2.910 + 3.052) + (2.061 + -1.048) + (-2.8632 +  -.5299) + (-4.945+ 1.116)
+
+
+h_st
+```
+
+
+
+```{r}
+ggplot(player_h, aes(x = player, y = Player_PTS)) +
+         geom_point(color = 'orange')
+
+```
+
+
+```{r}
+
+NBA[apply(NBA, 1, function(x) !any(x == 'Inactive')), ] %>%
+  rename(Away_Home = `A.H`) %>%
+  filter(Tm == 'DAL')%>%
+  filter(Date)
+  drop_na() 
+
+NBA
+```
+
+
+```{r}
+
+input_y <- 'Tm_PTS'
+
+NBA %>%
+
+group_by(Days, `Away_Home`) %>%
+filter(Days <=5) %>%
+summarise(mean = mean(.data[[input_y]], na.rm=T)) %>%
+  pivot_wider(names_from = Away_Home, values_from = mean) %>%
+  rename(Away = 'A') %>%
+  rename(Home = 'H')
+
+```
+
+
+
+```{r}
+
+team %>%
+  filter(`A/H` ==  'H')%>%
+  select(Tm, Opp, `W/L`, Tm_PTS, Opp_PTS, Days, Date)%>%
+  inner_join(team_analysis %>%
+               select(Opp=Tm, Date, Opp_Days = Days))
+
+```
+
+
+```{r}
+
+
+team_rest_diff %>%
+  mutate(PT_Diff = Tm_PTS-Opp_PTS) %>%
+  group_by(Days, Opp_Days) %>%
+  summarize(mean = mean(PT_Diff)) %>%
+  filter(Days <= 5) %>%
+  filter(Opp_Days <= 5 ) %>%
+  pivot_wider(names_from = Opp_Days, values_from = mean)
+
+```
+
+
+```{r}
+
+start <- '7-30'
+end <- '11-11'
+
+player <- read.csv(file = 'east_player_glog_22_23/brk_glog_23.csv') %>%
+  filter(Days >= 0) %>%
+  filter(Days <= 100) %>%
+  filter(Days != 0) %>%
+  mutate(Date = as.Date(Date), year= year(Date)) %>%
+  filter(!(Date >= ymd(paste(year, start, sep = '-')) &
+           Date <= ymd(paste(year,end, sep = '-'))))
+
+```
+
+
+```{r}
+
+dal <- player[apply(player, 1, function(x) !any(x == 'Inactive')), ] %>%
+ c
+  rename(Away_Home = `A.H`) %>%
+  drop_na() 
+
+player_2
+
+```
+
+```{r}
+
+input_y <- 'Player_PTS'
+
+player_2 %>%
+  group_by(Days, `Away_Home`) %>%
+  filter(Days <= 4)%>%
+  filter(player == c(	'irvinky01',	'claxtni01', 	'harrijo01', 'curryse01', 'onealro01')) %>%
+  summarise(mean = mean(.data[[input_y]], na.rm=T)) %>%
+  pivot_wider(names_from = Away_Home, values_from = mean) %>%
+  rename(Away = 'A') %>%
+  rename(Home = 'H')
+    
 
 ```
 
